@@ -12,11 +12,12 @@ public class Tests
     [Test]
     public async Task Test1()
     {
-        var client = new CustomApplicationFactory<HelloWorldProgram>("1").CreateClient();
+        Environment.SetEnvironmentVariable("Instance", "env!");
+        var client = new CustomApplicationFactory<HelloWorldProgram>(null).CreateClient();
         for (var x = 0; x < 1000; x++)
         {
             var response = await client.GetAsync("/");
-            Assert.AreEqual("Hello World! 1", await response.Content.ReadAsStringAsync());
+            Assert.AreEqual("Hello World! env!", await response.Content.ReadAsStringAsync());
             Thread.Sleep(TimeSpan.FromMilliseconds(100));
         }
     }
@@ -34,17 +35,20 @@ public class Tests
     }
 }
 
-public class CustomApplicationFactory<T>(string instance) : WebApplicationFactory<T>
+public class CustomApplicationFactory<T>(string? instance) : WebApplicationFactory<T>
     where T : class
 {
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        builder.ConfigureHostConfiguration(config =>
+        if (instance != null)
         {
-            config.AddInMemoryCollection(
-                new Dictionary<string, string?> { { "Instance", instance } }
-            );
-        });
+            builder.ConfigureHostConfiguration(config =>
+            {
+                config.AddInMemoryCollection(
+                    new Dictionary<string, string?> { { "Instance", instance } }
+                );
+            });
+        }
 
         return base.CreateHost(builder);
     }
