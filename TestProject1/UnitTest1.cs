@@ -1,33 +1,22 @@
 namespace TestProject1;
 
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using NUnit.Framework;
+using Microsoft.AspNetCore.Mvc.Testing;
 
-public class AssessBehaviourOfAsyncLocal
+public class Tests
 {
-    static readonly AsyncLocal<string> asyncLocalString = new();
+    private WebApplicationFactory<HelloWorldProgram> factory;
+
+    [SetUp]
+    public void Setup()
+    {
+        this.factory = new WebApplicationFactory<HelloWorldProgram>();
+    }
 
     [Test]
-    public void RunInParallel()
+    public async Task Test1()
     {
-        Console.WriteLine(asyncLocalString.Value);
-
-        asyncLocalString.Value = "OutsideTask";
-
-        var backgroundTask = new Task(() =>
-        {
-            Console.WriteLine("starting task");
-            Assert.AreEqual(null, asyncLocalString.Value);
-            Console.WriteLine(asyncLocalString.Value);
-            asyncLocalString.Value = "Bobby";
-
-            Console.WriteLine(asyncLocalString.Value);
-        });
-        backgroundTask.Start();
-        backgroundTask.Wait();
-
-        Console.WriteLine(asyncLocalString.Value);
+        var client = this.factory.CreateClient();
+        var response = await client.GetAsync("/");
+        Assert.AreEqual("Hello World!", await response.Content.ReadAsStringAsync());
     }
 }
